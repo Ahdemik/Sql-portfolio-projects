@@ -1,55 +1,48 @@
-----Select*
-----from Smartphones
+-- # Smartphones Data Analysis Queries
+-- This script contains various queries to analyze and manage data in the Smartphones table.
 
-----Convert price from INR to NGN
+-- ## 1. Convert Price from INR to NGN
+SELECT price, (price * 18.46) AS Price_in_ngn
+FROM Smartphones;
 
-----Select price, (price)*18.46 as Price_in_ngn
-----from Smartphones
+-- ## 2. Add a "Price_in_ngn" Column to the Table
+ALTER TABLE Smartphones
+ADD Price_in_ngn NVARCHAR(255);
 
-----Adding Price in ngn column to the table
+-- ## 3. Update the "Price_in_ngn" Column
+UPDATE Smartphones
+SET Price_in_ngn = (price * 18.46);
 
-----Select*
-----from Smartphones
-----Alter Table Smartphones
-----Add Price_in_ngn nvarchar(255);
+-- ## 4. Find Smartphones with the Highest Price
+SELECT brand_name, model, MAX(price_in_ngn) AS Max_Price
+FROM Smartphones
+GROUP BY brand_name, model
+ORDER BY Max_Price DESC;
 
-----Updating the price in ngn
+-- ## 5. Find Smartphones with the Highest Rating
+SELECT brand_name, model, MAX(rating) AS Max_Rating
+FROM Smartphones
+GROUP BY brand_name, model
+ORDER BY Max_Rating DESC;
 
-----Update  Smartphones
-----Set Price_in_ngn = (price)*18.46
+-- ## 6. Find Smartphones with the Highest Battery Capacity
+-- Includes brand name, model, price in NGN, and rating
+SELECT brand_name, model, price_in_ngn, rating, MAX(battery_capacity) AS Max_Battery_Capacity
+FROM Smartphones
+GROUP BY brand_name, model, price_in_ngn, rating
+ORDER BY Max_Battery_Capacity DESC;
 
---SMARTPHONES WITH THE HIGHEST PRICE
+-- ## 7. List Smartphones with Snapdragon Processors
+-- Includes only models with at least 8GB RAM and 64GB Internal Memory
+SELECT brand_name, model, price_in_ngn, processor_brand, ram_capacity, internal_memory
+FROM Smartphones
+WHERE processor_brand LIKE 'snapdragon'
+  AND ram_capacity >= 8
+  AND internal_memory >= 64;
 
---Select brand_name,model, max(price_in_ngn) as Max_Price
---from Smartphones
---group by brand_name, model
---order by Max_Price desc
-
---SMARTPHONES WITH THE HIGHEST RATING and Price
-
---Select brand_name,model, Max(rating) as max_rating
---from Smartphones
---group by brand_name,model
---order by max_rating desc
-
---SMARTPHONES WITH THE HIGHEST Battery capacity with price and rating
-
---Select brand_name,model, price_in_ngn,rating, Max(battery_capacity) as max_battery_capacity
---from Smartphones
---group by brand_name,model,price_in_ngn,rating
---order by max_battery_capacity desc
-
---List of smartphone where processor brand is snapdragon and proccessor is snapdragon
-
---select brand_name, model, price_in_ngn,processor_brand,ram_capacity, internal_memory
---from Smartphones
---where processor_brand like 'snapdragon'
---and ram_capacity >= '8'
---and internal_memory >= '64'
-
---select brand_name,Model,Price_in_ngn,rating,battery_capacity,ram_capacity,internal_memory
---from Smartphones
---where brand_name like 'apple'
---order by price_in_ngn desc
-
-
+-- ## 8. List All Apple Smartphones
+-- Includes their price, rating, battery capacity, RAM, and internal memory
+SELECT brand_name, model, price_in_ngn, rating, battery_capacity, ram_capacity, internal_memory
+FROM Smartphones
+WHERE brand_name LIKE 'apple'
+ORDER BY price_in_ngn DESC;
