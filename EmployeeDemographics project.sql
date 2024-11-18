@@ -1,189 +1,193 @@
---insert into EmployeeDemographics
---values (NULL, 'Adedeji', NULL, NULL, NULL)
+-- ===================================
+-- INSERTING DATA INTO A TABLE
+-- ===================================
+INSERT INTO EmployeeDemographics
+VALUES (NULL, 'Adedeji', NULL, NULL, NULL);
 
---Select *
---from EmployeeDemographics
---order by EmployeeID ASC
+-- ===================================
+-- SELECTING DATA FROM TABLES
+-- ===================================
+-- Select all records from EmployeeDemographics
+SELECT *
+FROM EmployeeDemographics
+ORDER BY EmployeeID ASC;
 
---Select*
---from dbo.EmployeeDemographics
+-- Select all records from EmployeeDemographics using dbo schema
+SELECT *
+FROM dbo.EmployeeDemographics;
 
---Select *
---from dbo.EmployeeSalary
+-- Select all records from EmployeeSalary
+SELECT *
+FROM dbo.EmployeeSalary;
 
+-- ===================================
+-- JOINING TABLES
+-- ===================================
+-- Full Outer Join between EmployeeDemographics and EmployeeSalary
+SELECT *
+FROM dbo.EmployeeDemographics
+FULL OUTER JOIN dbo.EmployeeSalary
+ON EmployeeDemographics.EmployeeID = EmployeeSalary.EmployeeID;
 
---Joining tables
+-- ===================================
+-- USING CASE STATEMENTS
+-- ===================================
+-- Cleaning Data with CASE Statements
+SELECT FirstName, LastName, Age,
+    CASE
+        WHEN Age = 30 THEN 'Old'
+        WHEN Age BETWEEN 25 AND 30 THEN 'Adult'
+        WHEN Age > 30 THEN 'Senior'
+        ELSE 'Young'
+    END AS Status
+FROM EmployeeDemographics
+WHERE Age IS NOT NULL
+ORDER BY Age;
 
---Select *
---from dbo.EmployeeDemographics
---full outer join dbo.EmployeeSalary
---on EmployeeDemographics.EmployeeID=EmployeeSalary.EmployeeID
+-- Calculations with CASE Statements
+SELECT FirstName, LastName, JobTitle, Salary,
+    CASE
+        WHEN JobTitle = 'Nurse' THEN Salary + (Salary * 0.20)
+        WHEN JobTitle = 'Salesman' THEN Salary + (Salary * 0.15)
+        WHEN JobTitle = 'Doctor' THEN Salary + (Salary * 0.30)
+        ELSE Salary + (Salary * 0.005)
+    END AS New_Salary
+FROM dbo.EmployeeDemographics
+JOIN dbo.EmployeeSalary
+ON EmployeeDemographics.EmployeeID = EmployeeSalary.EmployeeID
+ORDER BY New_Salary;
 
---Using Case statement to clean data
+-- ===================================
+-- UPDATING DATA
+-- ===================================
+-- Update Gender for a specific EmployeeID
+UPDATE dbo.EmployeeDemographics
+SET Gender = 'Male'
+WHERE EmployeeID = 1011;
 
--- select FirstName, Lastname,Age,
--- case
---when Age = 30 then 'old'
---	when Age between 25 and 30 then 'Adult'
---	when age > 30 then 'Agba'
---	else 'Young' 
--- end AS Status
--- from EmployeeDemographics
--- where Age is not null
--- order by age
- 
--- Using Case statement for calculations
+-- ===================================
+-- ALIASING COLUMNS
+-- ===================================
+-- Combine FirstName and LastName into Full_Name
+SELECT FirstName + ' ' + LastName AS Full_Name
+FROM EmployeeDemographics;
 
--- Select FirstName,LastName,JobTitle,Salary,
--- Case	
---	when Jobtitle = 'Nurse' Then Salary + (Salary * .20)
---	when Jobtitle= 'Salesman' then salary + (Salary * .15)
---	when JOBTITLE= 'Doctor' then salary + (salary * .30)
---	else salary + (Salary * .005)
---End AS New_Salary
---from dbo.EmployeeDemographics
---join dbo.EmployeeSalary
---on EmployeeDemographics.EmployeeID=EmployeeSalary.EmployeeID
--- order by New_Salary
+-- Aliasing tables for simplicity
+SELECT demo.EmployeeID, sal.Salary
+FROM EmployeeDemographics AS Demo
+JOIN EmployeeSalary AS Sal
+ON Demo.EmployeeID = Sal.EmployeeID;
 
---Select *
---from dbo.EmployeeDemographics
---order by EmployeeID
+-- ===================================
+-- PARTITIONING DATA
+-- ===================================
+-- Count of Gender using PARTITION BY
+SELECT FirstName, LastName, Salary, Gender,
+    COUNT(Gender) OVER (PARTITION BY Gender) AS Total_Gender
+FROM EmployeeDemographics Demo
+JOIN EmployeeSalary Sal
+ON Demo.EmployeeID = Sal.EmployeeID;
 
--- Using the update statement
+-- ===================================
+-- TEMPORARY TABLES
+-- ===================================
+-- Create a temporary table
+CREATE TABLE #temp_Employee_Salary (
+    EmployeeID INT,
+    JobTitle VARCHAR(100),
+    Salary INT
+);
 
---update .dbo.EmployeeDemographics
---set Gender= 'Male'
---where EmployeeID= 1011
+-- Insert data into the temporary table
+INSERT INTO #temp_Employee_Salary
+VALUES (1001, 'Programmer', 10000);
 
---Aliasing (Joining columns into one)
+-- Insert data from EmployeeSalary table into the temporary table
+INSERT INTO #temp_Employee_Salary
+SELECT *
+FROM EmployeeSalary;
 
---Select FirstName + ' ' + LastName as Full_Name
---from EmployeeDemographics
+-- Update the temporary table
+UPDATE #temp_Employee_Salary
+SET EmployeeID = 1010
+WHERE JobTitle = 'Programmer';
 
---select demo.EmployeeID, sal.Salary
---from EmployeeDemographics as Demo
---join EmployeeSalary as sal
---on demo.EmployeeID=sal.EmployeeID
+-- Drop and recreate another temporary table
+DROP TABLE IF EXISTS #temp_EmployeeSalary2;
+CREATE TABLE #temp_EmployeeSalary2 (
+    JobTitle VARCHAR(50),
+    Employee_Per_Job INT,
+    Salary INT
+);
 
---Partition
+-- Insert aggregated data into the temporary table
+INSERT INTO #temp_EmployeeSalary2
+SELECT JobTitle, COUNT(JobTitle), AVG(Salary)
+FROM EmployeeDemographics AS Demo
+JOIN EmployeeSalary AS Sal
+ON Demo.EmployeeID = Sal.EmployeeID
+GROUP BY JobTitle;
 
---select FirstName, LastName,Salary,Gender, count(Gender) over (partition by Gender) as Total_gender
---from EmployeeDemographics demo
---join EmployeeSalary sal
---on demo.EmployeeID=sal.EmployeeID
+-- Select data from the temporary table
+SELECT *
+FROM #temp_EmployeeSalary2;
 
---Creating temp table
+-- ===================================
+-- CLEANING DATA WITH FUNCTIONS
+-- ===================================
+-- Trim unnecessary spaces
+SELECT EmployeeID, TRIM(EmployeeID) AS TrimID
+FROM EmployeeErrors;
 
---create table #temp_Employee_Salary 
---(EmployeeID int,
---JobTitle varchar(100),
---Salary int,
---)
+-- Replace unwanted text in LastName
+SELECT LastName, REPLACE(LastName, '- Fired', '') AS LastNameFixed
+FROM EmployeeErrors;
 
---Select *
---from #temp_Employee_Salary
+-- ===================================
+-- SUBQUERIES
+-- ===================================
+-- Subquery in SELECT statement
+SELECT EmployeeID, Salary,
+    (SELECT AVG(Salary) FROM EmployeeSalary) AS AvgSalary
+FROM EmployeeSalary;
 
---inserting into temp table
+-- Subquery in WHERE statement
+SELECT EmployeeID, JobTitle, Salary
+FROM EmployeeSalary
+WHERE EmployeeID IN (
+    SELECT EmployeeID
+    FROM EmployeeDemographics
+    WHERE Age > 30
+);
 
---insert into #temp_Employee_Salary values
---(1001, 'Programmer', 10000)
+-- ===================================
+-- STRING FUNCTIONS
+-- ===================================
+-- Convert names to lowercase
+SELECT FirstName, LOWER(FirstName)
+FROM EmployeeDemographics;
 
---Inserting data from another table into a temp table
+-- ===================================
+-- STORED PROCEDURES
+-- ===================================
+-- Create and execute a stored procedure for a temporary table
+CREATE PROCEDURE Temp_Employee2 AS
+BEGIN
+    CREATE TABLE #Temp_Employee (
+        JobTitle VARCHAR(50),
+        Employee_Per_Job INT,
+        Salary INT
+    );
 
---insert into #temp_Employee_Salary 
---select *
---from EmployeeSalary
+    INSERT INTO #Temp_Employee
+    SELECT JobTitle, COUNT(JobTitle), AVG(Salary)
+    FROM EmployeeDemographics AS Demo
+    JOIN EmployeeSalary AS Sal
+    ON Demo.EmployeeID = Sal.EmployeeID
+    GROUP BY JobTitle;
 
---update #temp_Employee_Salary
---set EmployeeID= 1010
---where JobTitle = 'Programmer'
+    SELECT *
+    FROM #Temp_Employee;
+END;
 
---Dropping an existing temp table and creating a new one
-
---drop table if exists #temp_EmployeeSalary2
---create table #temp_EmployeeSalary2
---(JobTitle varchar(50),
---Employee_Per_Job int,
---Salary int,
---)
-
---inserting data from 2 tables into temp table
---insert into #temp_EmployeeSalary2
---select JobTitle, count(JobTitle), Avg(Salary)
---from EmployeeDemographics as Demo
---join EmployeeSalary as Sal
---on Demo.EmployeeID=Sal.EmployeeID
---group by JobTitle
-
---select *
---from #temp_EmployeeSalary2
-
---using the drop table 
-
---drop table if exists employeeErrors
---CREATE TABLE EmployeeErrors (
---EmployeeID varchar(50)
---,FirstName varchar(50)
---,LastName varchar(50)
---)
-
---Insert into EmployeeErrors Values 
---('1001  ', 'Jimbo', 'Halbert')
---,('  1002', 'Pamela', 'Beasely')
---,('1005', 'TOby', 'Flenderson - Fired')
-
---Using Trim, LTrim, RTrim
-
---select EmployeeID, Trim(employeeID) as TrimId
---from EmployeeErrors
-
---USING REPLACE
-
---select LastName, Replace(LastName, '- fired', '') as lastnamefixed
---from EmployeeErrors
-
---using subquries (in the select, from, and where statement)
-
-
-
---subquery in select
-
---select EmployeeID, Salary, (select avg(salary) from EmployeeSalary) as AvgSalary
---from EmployeeSalary
-
-----subquery in where
-
---select EmployeeID,JobTitle, Salary
---from EmployeeSalary
---where EmployeeID in (
---					select EmployeeID
---					from EmployeeDemographics
---					where Age > 30)
-
---Upper and Lower case
-
---Select FirstName, lower(FirstName)
---from EmployeeDemographics
-
---Store Procedure
-
---Create Procedure Temp_Employee2
---as
---create table #Temp_Employee
---(JobTitle varchar(50),
---Employee_Per_Job int,
---Salary int,
---)
-
---insert into #Temp_Employee
---select JobTitle, count(JobTitle), Avg(Salary)
---from EmployeeDemographics as Demo
---join EmployeeSalary as Sal
---on Demo.EmployeeID=Sal.EmployeeID
---group by JobTitle
-
---select *
---from #Temp_Employee
-
---Exec Temp_Employee2
+EXEC Temp_Employee2;
