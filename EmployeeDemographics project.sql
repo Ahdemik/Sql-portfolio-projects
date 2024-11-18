@@ -4,9 +4,9 @@
 INSERT INTO EmployeeDemographics
 VALUES (NULL, 'Adedeji', NULL, NULL, NULL);
 
--- ===================================
+-- ==================================
 -- SELECTING DATA FROM TABLES
--- ===================================
+-- ==================================
 -- Select all records from EmployeeDemographics
 SELECT *
 FROM EmployeeDemographics
