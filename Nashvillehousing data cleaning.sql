@@ -1,132 +1,112 @@
--- Cleaning data in sql queries
+-- CLEANING DATA IN SQL QUERIES FOR NASHVILLE HOUSING DATA
 
--- Standardize Date Format
+-- 1. STANDARDIZE DATE FORMAT
+-- Convert the SaleDate column to a standardized date format and add a new column
+UPDATE Nashvillehousing
+SET SaleDate = CONVERT(DATE, SaleDate);
 
---Select*
---from Nashvillehousing
+ALTER TABLE Nashvillehousing
+ADD SaleDateConverted DATE;
 
---update Nashvillehousing
---set SaleDate= Convert(date,Saledate)
+UPDATE Nashvillehousing
+SET SaleDateConverted = CONVERT(DATE, SaleDate);
 
---Alter table Nashvillehousing
---Add SaleDateConverted Date;
+-- Verify the updated SaleDateConverted column
+SELECT SaleDateConverted
+FROM Nashvillehousing;
 
---update Nashvillehousing
---set SaleDateConverted= Convert(date,Saledate)
+-- 2. POPULATE MISSING PROPERTY ADDRESS DATA
+-- Check rows with missing PropertyAddress
+SELECT *
+FROM Nashvillehousing
+WHERE PropertyAddress IS NULL
+ORDER BY ParcelID;
 
--- To run update saledate
---Select SaleDateConverted
---from Nashvillehousing
+-- Identify corresponding addresses from other rows with the same ParcelID
+SELECT a.ParcelID, a.PropertyAddress, b.ParcelID, b.PropertyAddress, 
+       ISNULL(a.PropertyAddress, b.PropertyAddress) AS UpdatedAddress
+FROM Nashvillehousing a
+JOIN Nashvillehousing b
+    ON a.ParcelID = b.ParcelID
+    AND a.[UniqueID] <> b.[UniqueID]
+WHERE a.PropertyAddress IS NULL;
 
--- Populate property address data
+-- Update missing PropertyAddress with corresponding values
+UPDATE a
+SET PropertyAddress = ISNULL(a.PropertyAddress, b.PropertyAddress)
+FROM Nashvillehousing a
+JOIN Nashvillehousing b
+    ON a.ParcelID = b.ParcelID
+    AND a.[UniqueID] <> b.[UniqueID]
+WHERE a.PropertyAddress IS NULL;
 
---Select*
---from Nashvillehousing
---where PropertyAddress is null
---order by ParcelID
+-- 3. SPLIT PROPERTY ADDRESS INTO INDIVIDUAL COLUMNS (ADDRESS, CITY)
+-- Break down the PropertyAddress column
+SELECT PropertyAddress,
+       PARSENAME(REPLACE(PropertyAddress, ',', '.'), 2) AS PropertyAddress,
+       PARSENAME(REPLACE(PropertyAddress, ',', '.'), 1) AS PropertyAddress_City
+FROM Nashvillehousing;
 
---Select a.ParcelID, a.PropertyAddress, b.ParcelID, b.PropertyAddress, ISNULL(a.propertyaddress,b.PropertyAddress) 
---from Nashvillehousing a
---join Nashvillehousing b
--- on a.ParcelID=b.ParcelID
--- and a.[UniqueID ]<>b.[UniqueID ]
--- where a.PropertyAddress is null
+-- Add and populate the new columns for PropertyAddress breakdown
+ALTER TABLE Nashvillehousing
+ADD PropertyAddress_fix NVARCHAR(255);
 
--- update a
--- set PropertyAddress= ISNULL(a.propertyaddress,b.PropertyAddress)
--- from Nashvillehousing a
---join Nashvillehousing b
--- on a.ParcelID=b.ParcelID
--- and a.[UniqueID ]<>b.[UniqueID ]
--- where a.PropertyAddress is null
+UPDATE Nashvillehousing
+SET PropertyAddress_fix = PARSENAME(REPLACE(PropertyAddress, ',', '.'), 2);
 
--- Breaking out Property Address into Individual Columns (Address,City,State)
+ALTER TABLE Nashvillehousing
+ADD PropertyAddress_City NVARCHAR(255);
 
---FOR PROPERTYADDRESS
---Select PropertyAddress
---from Nashvillehousing
+UPDATE Nashvillehousing
+SET PropertyAddress_City = PARSENAME(REPLACE(PropertyAddress, ',', '.'), 1);
 
---Select
---PARSENAME(Replace(propertyaddress, ',', '.'), 2) as PropertyAddress
---,PARSENAME(Replace(propertyaddress, ',', '.'), 1) as PropertyAddress_City
---from Nashvillehousing
+-- 4. SPLIT OWNER ADDRESS INTO INDIVIDUAL COLUMNS (ADDRESS, CITY, STATE)
+-- Break down the OwnerAddress column
+SELECT OwnerAddress,
+       PARSENAME(REPLACE(OwnerAddress, ',', '.'), 3) AS Address,
+       PARSENAME(REPLACE(OwnerAddress, ',', '.'), 2) AS City,
+       PARSENAME(REPLACE(OwnerAddress, ',', '.'), 1) AS State
+FROM Nashvillehousing;
 
---Alter Table Nashvillehousing
---Add PropertyAddress_fix nvarchar(255);
+-- Add and populate the new columns for OwnerAddress breakdown
+ALTER TABLE Nashvillehousing
+ADD Address NVARCHAR(255);
 
---Update Nashvillehousing
---Set PropertyAddress_fix = PARSENAME(Replace(propertyaddress, ',', '.'), 2)
+UPDATE Nashvillehousing
+SET Address = PARSENAME(REPLACE(OwnerAddress, ',', '.'), 3);
 
+ALTER TABLE Nashvillehousing
+ADD City NVARCHAR(255);
 
---Alter Table Nashvillehousing
---Add PropertyAddress_City nvarchar(255);
+UPDATE Nashvillehousing
+SET City = PARSENAME(REPLACE(OwnerAddress, ',', '.'), 2);
 
---Update Nashvillehousing
---Set PropertyAddress_City = PARSENAME(Replace(propertyaddress, ',', '.'), 1) 
+ALTER TABLE Nashvillehousing
+ADD State NVARCHAR(255);
 
--- Breaking out Owner Address into Individual Columns (Address,City,State)
+UPDATE Nashvillehousing
+SET State = PARSENAME(REPLACE(OwnerAddress, ',', '.'), 1);
 
---select *
---from Nashvillehousing
+-- 5. UPDATE "SOLD AS VACANT" FIELD (Y/N TO YES/NO)
+-- View distinct values in SoldAsVacant and their counts
+SELECT DISTINCT(SoldAsVacant), COUNT(SoldAsVacant)
+FROM Nashvillehousing
+GROUP BY SoldAsVacant;
 
---select
---PARSENAME(Replace(OwnerAddress, ',', '.'),3) as Address
---,PARSENAME(Replace(OwnerAddress, ',', '.'),2) as City
---,PARSENAME(Replace(OwnerAddress, ',', '.'),1) as State
---from Nashvillehousing
+-- Update "SoldAsVacant" field with descriptive values
+UPDATE Nashvillehousing
+SET SoldAsVacant = CASE
+    WHEN SoldAsVacant = 'Y' THEN 'Yes'
+    WHEN SoldAsVacant = 'N' THEN 'No'
+    ELSE SoldAsVacant
+END;
 
---Drop Table if exists Owner_Address_Fix
---Alter Table Nashvillehousing
---Add Address nvarchar(255);
+-- 6. DELETE UNUSED COLUMNS
+-- Drop columns no longer needed
+ALTER TABLE Nashvillehousing
+DROP COLUMN PropertyAddress, OwnerAddress;
 
---Update Nashvillehousing
---set Address= PARSENAME(Replace(OwnerAddress, ',', '.'),3)
-
---Alter Table Nashvillehousing
---Add City nvarchar(255);
-
---Update Nashvillehousing
---set City= PARSENAME(Replace(OwnerAddress, ',', '.'),2)
-
---Alter Table Nashvillehousing
---Add State nvarchar(255);
-
---Update Nashvillehousing
---set State= PARSENAME(Replace(OwnerAddress, ',', '.'),1)
-
-
---Changing of Acronymns to full( Y and N to Yes and NO in 'Sold as Vacant' field
-
---select Distinct(SoldAsVacant), Count(soldasvacant)
---from Nashvillehousing
---group by SoldAsVacant
-
---Select SoldAsVacant,
---Case
---	when SoldAsVacant = 'Y' then 'Yes'
---	when SoldAsVacant = 'N' then 'NO'
---	Else SoldAsVacant
---	End
---from Nashvillehousing
-
---Update Nashvillehousing
---Set SoldAsVacant =
---Case
---	when SoldAsVacant = 'Y' then 'Yes'
---	when SoldAsVacant = 'N' then 'NO'
---	Else SoldAsVacant
---	End
-
--- DELETE UNUSED COLUMNS 
-
---SELECT*
---FROM Nashvillehousing
-
---Alter Table Nashvillehousing
---Drop column PropertyAddress, OwnerAddress
-
---RENAMING COLUMNS NAME
-
---sp_rename 'Nashvillehousing.SaleDateConverted', 'SaleDate'
-
---sp_rename 'Nashvillehousing.PropertyAddress_fix', 'PropertyAddress'
+-- 7. RENAME COLUMNS
+-- Rename columns for better clarity
+EXEC sp_rename 'Nashvillehousing.SaleDateConverted', 'SaleDate';
+EXEC sp_rename 'Nashvillehousing.PropertyAddress_fix', 'PropertyAddress';
